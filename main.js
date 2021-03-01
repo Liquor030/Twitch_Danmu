@@ -467,11 +467,11 @@ var ws_chat = {
     }
 
     if (chat_string.indexOf("PRIVMSG") != -1) {
-      let pfid = /(?<=user-id=).*?(?=;)/.exec(chat_string)[0];
+      let pfid = /user-id=(.*?);/.exec(chat_string)[1];
       let rel_color = main.pfid_color(pfid);
       let color_css = rel_color ? ("color:" + rel_color + ";") : "";
-      let w_name = /(?<=display-name=).*?(?=;)/.exec(chat_string)[0];
-      let msg = /(?<=PRIVMSG.*:).*/.exec(chat_string)[0];
+      let w_name = /display-name=(.*?);/.exec(chat_string)[1];
+      let msg = /PRIVMSG.*:(.*)/.exec(chat_string)[1];
       main.writeToScreen(`<span class="name name_title" style="${color_css}" title="${pfid}">${w_name} :</span> <span class="msg">${msg}</span>`, ["kk_chat"]);
     }
   },

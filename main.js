@@ -165,6 +165,15 @@ const main = {
     output = document.getElementById("output"); //聊天室輸出
     output.innerHTML = '';
 
+    heat = document.getElementById("heat"); //熱度
+    heat.innerHTML = '● 載入中..';
+
+    // 人数显示
+    this.getUseViewCount();
+    setInterval(() => {
+      this.getUseViewCount();
+    }, 30000);
+
     if (obs_mode == false) {
       //關閉checkbox
       document.querySelector("#ttsCheck").checked = false; //語音
@@ -181,8 +190,68 @@ const main = {
       });
     }
 
-    let ovs = false;
-    this.get_token(ovs); //取得token
+    let get_hashtag = window.location.hash;
+    //let get_token_url;
+
+    if (get_hashtag !== '' || get_hashtag !== '#') {
+
+      elemVisibility.hide( document.getElementById("announcements") );
+      elemVisibility.show( document.getElementById("tool_bar") );
+
+      cssCheck_tool_bar = !( getComputedStyle( document.getElementById('tool_bar') ).display === 'none' );
+      if (obs_mode == false && cssCheck_tool_bar == true) {
+        //setting_div.style.display = 'block'; //新功能先预设開啟
+        //elemVisibility.show(setting_div);
+      }
+      this.cssCheck();
+
+      webSocket_chat();
+    }
+  },
+  getUseViewCount: function () { //加载观看人数
+    fetch(
+      'https://gql.twitch.tv/gql',
+      {
+        method: 'POST', // GET, POST
+        headers: {
+          'content-type': 'application/json',
+          'Client-ID': 'kimne78kx3ncx6brgo4mv6wki5h1ko'
+        },
+        cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+        mode: 'cors', // no-cors, cors, *same-origin
+        body: JSON.stringify({
+          "operationName": "UseViewCount",
+          "variables": {
+            "channelLogin": `${window.location.hash.substr(1)}`
+          },
+          "extensions": {
+            "persistedQuery": {
+              "version": 1,
+              "sha256Hash": "00b11c9c428f79ae228f30080a06ffd8226a1f068d6f52fbc057cbde66e994c2"
+            }
+          }
+        })
+      }
+    ).then((response) => {
+      return response.json();
+    }).then((rsp_json) => {
+      user = rsp_json["data"]["user"]
+      if (user == null)
+      {
+        heat.innerHTML = '● 未找到该直播间';
+      }
+      else{
+        stream = user["stream"]
+        if (stream == null)
+        {
+          heat.innerHTML = '● 未开播';
+        }
+        else
+        {
+          heat.innerHTML = `● 人数: ${stream["viewersCount"]}`;
+        }
+      }
+    })
   },
   change_channel_btn: function () { //首頁切換頻道按鈕
     let btn_submit = document.getElementById("btn_submit");
@@ -201,25 +270,6 @@ const main = {
         window.location.hash = `#${input_submit.value}`;
       }
     });
-  },
-  get_token: function (ovs) { //取得連線資訊
-    let get_hashtag = window.location.hash;
-    //let get_token_url;
-
-    if (get_hashtag !== '' || get_hashtag !== '#') {
-
-      elemVisibility.hide( document.getElementById("announcements") );
-      elemVisibility.show( document.getElementById("tool_bar") );
-
-      cssCheck_tool_bar = !( getComputedStyle( document.getElementById('tool_bar') ).display === 'none' );
-      if (obs_mode == false && cssCheck_tool_bar == true) {
-        //setting_div.style.display = 'block'; //新功能先预设開啟
-        //elemVisibility.show(setting_div);
-      }
-      this.cssCheck();
-
-      webSocket_chat();
-    }
   },
   cssCheck: function() { //檢查用戶自訂的display是否為none,若為none則直接不輸出到網頁上(輸出前判定)
     main.writeToScreen(`<span class="pod">TEST</span> .kk_chat`,   ["kk_chat","testCSS"]);
@@ -451,9 +501,10 @@ var ws_chat = {
     this.doSend(`CAP REQ :twitch.tv/tags twitch.tv/commands`);
     this.doSend(`NICK justinfan${Math.ceil(Math.random()*100000)}`);
     this.doSend(`JOIN #${window.location.hash.substr(1)}`);
-    ping = setTimeout(() => {
+    setInterval(() => {
       this.doSend("PING");
     }, 300000);
+    
     main.writeToScreen(`[成功连接聊天室服务器]`, ["kk_chat", "kk_conn", "kk_reconn"]);
     reconnection_chat_count = 0;
   },
@@ -467,12 +518,27 @@ var ws_chat = {
     }
 
     if (chat_string.indexOf("PRIVMSG") != -1) {
+      // 管理员判断
+      let mod = /mod=(.*?);/.exec(chat_string)[1];
+      let role = "";
+      if (mod == "1") {
+        role = "管理";
+      }
+      if(role !== ""){
+        role = `<span class="pod isadmin">${role}</span>`;
+      }
+
+      // 用户名颜色
       let pfid = /user-id=(.*?);/.exec(chat_string)[1];
       let rel_color = main.pfid_color(pfid);
       let color_css = rel_color ? ("color:" + rel_color + ";") : "";
+
+      // 用户名
       let w_name = /display-name=(.*?);/.exec(chat_string)[1];
+
+      // 弹幕内容
       let msg = /PRIVMSG.*:(.*)/.exec(chat_string)[1];
-      main.writeToScreen(`<span class="name name_title" style="${color_css}" title="${pfid}">${w_name} :</span> <span class="msg">${msg}</span>`, ["kk_chat"]);
+      main.writeToScreen(`${role}<span class="name name_title" style="${color_css}" title="${pfid}">${w_name} :</span> <span class="msg">${msg}</span>`, ["kk_chat"]);
     }
   },
   onError: function (evt) {

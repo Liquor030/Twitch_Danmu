@@ -212,7 +212,7 @@ const main = {
     fetch(
       'https://gql.twitch.tv/gql',
       {
-        method: '发布ST', // GET, 发布ST
+        method: 'POST', // GET
         headers: {
           'content-type': 'application/json',
           'Client-ID': 'kimne78kx3ncx6brgo4mv6wki5h1ko'

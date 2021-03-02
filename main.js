@@ -39,6 +39,7 @@ const client_id = 'chikattochikachika';
 //const wsUri_gift = "wss://ctl.lv-show.com/socket.io/?EIO=3&transport=websocket"; //gift server
 
 const wsUri_chat = "wss://irc-ws.chat.twitch.tv/";
+const hexch = new Array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F');
 
 var output; //聊天室输出 div#output
 var output_last_lines = new Array(); //保存最新的n行讯息
@@ -47,7 +48,7 @@ var user_cnt; //观众数 div#user_cnt
 var viewers = 0;
 var setting_div; //设置栏 #setting_div
 var scroll_to_bottom_btn; //卷到到最新行的按钮 #scroll_to_bottom_btn
-var ping; // 保持websocket连线,PING-发布NG
+var ping; // 保持websocket连线,PING-PONG
 var chat_i = 0; //计算聊天室的行数
 var tokens = []; //连线资讯
 var stop_scroll = false; //上拉时防止卷动
@@ -172,7 +173,7 @@ const main = {
     this.getUseViewCount();
     setInterval(() => {
       this.getUseViewCount();
-    }, 30000);
+    }, 10000);
 
     if (obs_mode == false) {
       //关闭checkbox
@@ -477,6 +478,38 @@ const main = {
       });
     }
   },
+  ToHex: function (n)
+  {	var h, l;
+
+    n = Math.round(n);
+    l = n % 16;
+    h = Math.floor((n / 16)) % 16;
+    return (hexch[h] + hexch[l]);
+  }
+  ,
+  DoColor: function (c, l)
+  { var r, g, b;
+
+    r = '0x' + c.substring(1, 3);
+    g = '0x' + c.substring(3, 5);
+    b = '0x' + c.substring(5, 7);
+    
+    if(l > 120)
+    {
+      l = l - 120;
+
+      r = (r * (120 - l) + 255 * l) / 120;
+      g = (g * (120 - l) + 255 * l) / 120;
+      b = (b * (120 - l) + 255 * l) / 120;
+    }else
+    {
+      r = (r * l) / 120;
+      g = (g * l) / 120;
+      b = (b * l) / 120;
+    }
+
+    return '#' + this.ToHex(r) + this.ToHex(g) + this.ToHex(b);
+  },
   pfid_color: function(_pfid){
     let rel_color = "#ff4c4c";
     if( _pfid && (typeof _pfid=="string" || typeof _pfid=="number") ){
@@ -485,7 +518,8 @@ const main = {
       if(new_color_dec<=16777215 && new_color_dec >= 0){
         let new_color_hex = new_color_dec.toString(16);
         if(new_color_hex.length == 6){
-          rel_color = "#" + new_color_hex;
+          baseCol = "#" + new_color_hex;
+          rel_color = this.DoColor(baseCol, "192")
         }
       }
     }
@@ -514,7 +548,7 @@ var ws_chat = {
     let chat_string = evt.data.trim();
 
     if (chat_string.indexOf("PING") != -1) {
-      this.doSend("发布NG");
+      this.doSend("PONG");
     }
 
     if (chat_string.indexOf("PRIVMSG") != -1) {

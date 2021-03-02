@@ -2,18 +2,18 @@
 // 在 BABANANA-Chat-Web[https://github.com/Eotones/BABANANA-Chat-Web] 的基础上进行修改
 // by Liquor030
 
-//全域變數
+//全域变量
 const DEBUG_MODE = false;
-// 是否顯示console.log, 值: true or false
+// 是否显示console.log, 值: true or false
 // 例:
 // DEBUG_MODE && console.log("errer");
 
-//檢查瀏覽器來源
+//检查浏览器来源
 // 返回 string
 // 值: "obs_browser", "desktop_app", "normal_browser"
-// 參考資料: https://github.com/obsproject/obs-browser/blob/master/README.md
+// 参考资料: https://github.com/obsproject/obs-browser/blob/master/README.md
 const check_browser_source = function(){
-  if(typeof window.obsstudio !== 'undefined'){ // obs studio專用js
+  if(typeof window.obsstudio !== 'undefined'){ // obs studio专用js
     // is OBS browser
     document.body.id = "css_for_obs";
     return "obs_browser";
@@ -33,39 +33,39 @@ const client_id = 'chikattochikachika';
 
 // const wsUri_chat = "wss://cht.ws.kingkong.com.tw/chat_nsp/?EIO=3&transport=websocket"; //chat server
 // const wsUri_gift_2 = "wss://ctl.ws.kingkong.com.tw/control_nsp/?EIO=3&transport=websocket"; //gift server
-// const wsUri_gift_1 = "wss://ctl-1.ws.kingkong.com.tw/control_nsp/?EIO=3&transport=websocket"; //館長台
+// const wsUri_gift_1 = "wss://ctl-1.ws.kingkong.com.tw/control_nsp/?EIO=3&transport=websocket"; //馆长台
 
 //const wsUri_chat = "wss://cht.lv-show.com/socket.io/?EIO=3&transport=websocket"; //chat server
 //const wsUri_gift = "wss://ctl.lv-show.com/socket.io/?EIO=3&transport=websocket"; //gift server
 
 const wsUri_chat = "wss://irc-ws.chat.twitch.tv/";
 
-var output; //聊天室輸出 div#output
-var output_last_lines = new Array(); //保存最新的n行訊息
-var heat; //熱度 div#heat
-var user_cnt; //觀眾數 div#user_cnt
+var output; //聊天室输出 div#output
+var output_last_lines = new Array(); //保存最新的n行讯息
+var heat; //热度 div#heat
+var user_cnt; //观众数 div#user_cnt
 var viewers = 0;
-var setting_div; //設定欄 #setting_div
-var scroll_to_bottom_btn; //捲到到最新行的按鈕 #scroll_to_bottom_btn
-var ping; // 保持websocket連線,PING-PONG
-var chat_i = 0; //計算聊天室的行数
-var tokens = []; //連線資訊
-var stop_scroll = false; //上拉時防止捲動
-var tool_bar_datetime_span; //toolbar時間
+var setting_div; //设置栏 #setting_div
+var scroll_to_bottom_btn; //卷到到最新行的按钮 #scroll_to_bottom_btn
+var ping; // 保持websocket连线,PING-发布NG
+var chat_i = 0; //计算聊天室的行数
+var tokens = []; //连线资讯
+var stop_scroll = false; //上拉时防止卷动
+var tool_bar_datetime_span; //toolbar时间
 var last_msg_time = 0;
 
 
-//檢查使用者自訂的css display屬性
-// none為false,否則為true
+//检查使用者自订的css display属性
+// none为false,否则为true
 var cssCheck_kk_gift;
 var cssCheck_kk_reconn;
 var cssCheck_kk_bana;
 var cssCheck_kk_come;
 
-var reconnection_chat_count = 0; //計算斷線重連次數 chat server
+var reconnection_chat_count = 0; //计算断线重连次数 chat server
 
-//外部變數(index.htm<script>)
-//無設定時使用预设值
+//外部变量(index.htm<script>)
+//无设置时使用默认值
 var obs_mode;
 var chat_limit;
 var csrf_token;
@@ -140,33 +140,33 @@ const elemVisibility = {
 
 const main = {
   init: function () {
-    // 當 hashtag 改變時重新載入頁面
+    // 当 hashtag 改变时重新载入页面
     window.addEventListener("hashchange", function () {
       location.reload();
     }, false);
 
-    //判斷載入分頁
+    //判断载入分页
     if (window.location.hash == '' || window.location.hash == '#') {
-      //載入首頁
+      //载入首页
       this.goto_home_page();
     } else {
-      //載入聊天室頁面
+      //载入聊天室页面
       this.goto_chat_page();
     }
   },
-  goto_home_page: function () { //載入首頁
+  goto_home_page: function () { //载入首页
     let c_script = document.getElementById("c_script");
     elemVisibility.show(c_script);
-    this.change_channel_btn(); //改完後觸發hashchange重載頁面
+    this.change_channel_btn(); //改完后触发hashchange重载页面
   },
-  goto_chat_page: function () { //載入聊天室頁面
-    this.check_scroll(); //檢查畫面捲動方向,如果向上則觸法暫停捲動功能
+  goto_chat_page: function () { //载入聊天室页面
+    this.check_scroll(); //检查画面卷动方向,如果向上则触法暂停卷动功能
 
-    output = document.getElementById("output"); //聊天室輸出
+    output = document.getElementById("output"); //聊天室输出
     output.innerHTML = '';
 
-    heat = document.getElementById("heat"); //熱度
-    heat.innerHTML = '● 載入中..';
+    heat = document.getElementById("heat"); //热度
+    heat.innerHTML = '<font color="#FFFF00">●</font> 加载中..';
 
     // 人数显示
     this.getUseViewCount();
@@ -175,13 +175,13 @@ const main = {
     }, 30000);
 
     if (obs_mode == false) {
-      //關閉checkbox
-      document.querySelector("#ttsCheck").checked = false; //語音
-      document.querySelector("#statsUiCheck").checked = false; //統計
+      //关闭checkbox
+      document.querySelector("#ttsCheck").checked = false; //语音
+      document.querySelector("#statsUiCheck").checked = false; //统计
       
-      this.scroll_to_bottom_btn(); //建立向下捲動按鈕
+      this.scroll_to_bottom_btn(); //建立向下卷动按钮
       
-      //開啟設定選單
+      //开启设置选单
       setting_div = document.getElementById("setting_div");
       scroll_to_bottom_btn = document.getElementById("scroll_to_bottom_btn");
 
@@ -200,7 +200,7 @@ const main = {
 
       cssCheck_tool_bar = !( getComputedStyle( document.getElementById('tool_bar') ).display === 'none' );
       if (obs_mode == false && cssCheck_tool_bar == true) {
-        //setting_div.style.display = 'block'; //新功能先预设開啟
+        //setting_div.style.display = 'block'; //新功能先默认开启
         //elemVisibility.show(setting_div);
       }
       this.cssCheck();
@@ -212,7 +212,7 @@ const main = {
     fetch(
       'https://gql.twitch.tv/gql',
       {
-        method: 'POST', // GET, POST
+        method: '发布ST', // GET, 发布ST
         headers: {
           'content-type': 'application/json',
           'Client-ID': 'kimne78kx3ncx6brgo4mv6wki5h1ko'
@@ -238,22 +238,22 @@ const main = {
       user = rsp_json["data"]["user"]
       if (user == null)
       {
-        heat.innerHTML = '● 未找到该直播间';
+        heat.innerHTML = '<font color="#FF0000">●</font> 未找到该直播间';
       }
       else{
         stream = user["stream"]
         if (stream == null)
         {
-          heat.innerHTML = '● 未开播';
+          heat.innerHTML = '<font color="#FF0000">●</font>  未开播';
         }
         else
         {
-          heat.innerHTML = `● 人数: ${stream["viewersCount"]}`;
+          heat.innerHTML = `<font color="#00FF00">●</font> 人数: ${stream["viewersCount"]}`;
         }
       }
     })
   },
-  change_channel_btn: function () { //首頁切換頻道按鈕
+  change_channel_btn: function () { //首页切换频道按钮
     let btn_submit = document.getElementById("btn_submit");
     let input_submit = document.getElementById("inputChannel");
 
@@ -271,7 +271,7 @@ const main = {
       }
     });
   },
-  cssCheck: function() { //檢查用戶自訂的display是否為none,若為none則直接不輸出到網頁上(輸出前判定)
+  cssCheck: function() { //检查用户自订的display是否为none,若为none则直接不输出到网页上(输出前判定)
     main.writeToScreen(`<span class="pod">TEST</span> .kk_chat`,   ["kk_chat","testCSS"]);
 
     main.writeToScreen(`<span class="pod">TEST</span> .kk_gift`,   ["kk_gift",   "testCSS"]);
@@ -279,24 +279,24 @@ const main = {
     main.writeToScreen(`<span class="pod">TEST</span> .kk_bana`,   ["kk_bana",   "testCSS"]);
     main.writeToScreen(`<span class="pod">TEST</span> .kk_come`,   ["kk_come",   "testCSS"]);
 
-    //計算OBS版的最大行数
+    //计算OBS版的最大行数
     if(obs_mode===true){
       this.linesCheck();
 
-      //若視窗大小被改變
-      //(正常在OBS下使用不會觸發這個,主要是瀏覽器上測試用)
+      //若窗口大小被改变
+      //(正常在OBS下使用不会触发这个,主要是浏览器上测试用)
       window.addEventListener('resize', () => {
         this.linesCheck();
       }, true);
     }
     
-    //全域變數
+    //全域变量
     cssCheck_kk_gift =   !( getComputedStyle( document.querySelector('.kk_gift')   ).display === 'none' );
     cssCheck_kk_reconn = !( getComputedStyle( document.querySelector('.kk_reconn') ).display === 'none' );
     cssCheck_kk_bana =   !( getComputedStyle( document.querySelector('.kk_bana')   ).display === 'none' );
     cssCheck_kk_come =   !( getComputedStyle( document.querySelector('.kk_come')   ).display === 'none' );
 
-    //測試完後刪除
+    //测试完后删除
     document.querySelectorAll(".testCSS").forEach((e) => {
       e.parentNode.removeChild(e);
     });
@@ -308,8 +308,8 @@ const main = {
 
     //elemVisibility.hide( document.getElementById('cssCheck') );
   },
-  linesCheck: function(){ //計算OBS版的最大行数
-    console.log( `[预设聊天室行数] ${chat_limit}` );
+  linesCheck: function(){ //计算OBS版的最大行数
+    console.log( `[默认聊天室行数] ${chat_limit}` );
     
     let cssCheck_kk_chat = document.querySelector('.kk_chat');
 
@@ -320,16 +320,16 @@ const main = {
       console.log( `[测试画面高度] ${cssCheck_screen_height}` );
 
       let auto_chat_lines = ( cssCheck_screen_height/cssCheck_one_line_height ).toFixed(0);
-      auto_chat_lines = auto_chat_lines*1.0 + 3; //加3行緩衝
+      auto_chat_lines = auto_chat_lines*1.0 + 3; //加3行缓冲
       console.log( `[自动判定聊天室行数] ${auto_chat_lines}` );
 
-      //若在安全範圍內則修改,未在安全范围内则继续使用预设值
+      //若在安全范围内则修改,未在安全范围内则继续使用默认值
       if(auto_chat_lines>=10 && auto_chat_lines<=100){
-        //全域變數
+        //全域变量
         chat_limit = auto_chat_lines;
         console.log( `[聊天室行数] ${chat_limit} (修改成功)` );
       }else{
-        console.log( `[聊天室行数] ${chat_limit} (未在安全范围内则继续使用预设值)` );
+        console.log( `[聊天室行数] ${chat_limit} (未在安全范围内则继续使用默认值)` );
       }
     }
   },
@@ -338,7 +338,7 @@ const main = {
     html_c = html_c.trim();
     return html_c.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   },
-  writeToScreen: function (message, class_name_arr) { //將訊息寫入畫面的 div#output 裡
+  writeToScreen: function (message, class_name_arr) { //将讯息写入画面的 div#output 里
     let pre = document.createElement("div");
     //pre.style.wordWrap = "break-word";
     pre.classList.add("output_lines");
@@ -349,17 +349,17 @@ const main = {
     }
 
     message = message.trim();
-    //pre.innerHTML = message.replace(/\n/g, "<br />"); // 將"\n"轉換成"<br />"
+    //pre.innerHTML = message.replace(/\n/g, "<br />"); // 将"\n"转换成"<br />"
     //pre.innerHTML = `<span class="kk_time">${this.get_time()}</span><span class="kk_border"></span>${message}`;
     pre.innerHTML = `<span class="kk_time kk_pod">${this.get_time()}</span>${message}`;
 
-    output.appendChild(pre); //輸出訊息在畫面上
+    output.appendChild(pre); //输出讯息在画面上
 
     this.scroll_to_bottom_auto();
     
     //新方法
-    //選while而不用加一刪一是因為要防bug漏算導致越積越多行
-    //*目前不確定writeToScreen()如果送出太快太密集會不會導致行数多刪
+    //选while而不用加一删一是因为要防bug漏算导致越积越多行
+    //*目前不确定writeToScreen()如果送出太快太密集会不会导致行数多删
     while(output.childElementCount > chat_limit){
       output.removeChild(output.childNodes[0]); 
     }
@@ -374,7 +374,7 @@ const main = {
     pre.classList.add(...class_name_arr);
 
     message = message.trim();
-    //pre.innerHTML = message.replace(/\n/g, "<br />"); // 將"\n"轉換成"<br />"
+    //pre.innerHTML = message.replace(/\n/g, "<br />"); // 将"\n"转换成"<br />"
     //pre.innerHTML = `<span class="kk_time">${this.get_time()}</span><span class="kk_border"></span>${message}`;
     
     //pre.innerHTML = `<span class="kk_time kk_pod">${this.get_time()}</span>${message}`;
@@ -388,22 +388,22 @@ const main = {
     ele_span_msg.innerHTML = this.get_time();
     pre.appendChild(ele_span_msg);
 
-    output.appendChild(pre); //輸出訊息在畫面上
+    output.appendChild(pre); //输出讯息在画面上
 
     this.scroll_to_bottom_auto();
     
     //新方法
-    //選while而不用加一刪一是因為要防bug漏算導致越積越多行
-    //*目前不確定writeToScreen()如果送出太快太密集會不會導致行数多刪
+    //选while而不用加一删一是因为要防bug漏算导致越积越多行
+    //*目前不确定writeToScreen()如果送出太快太密集会不会导致行数多删
     while(output.childElementCount > chat_limit){
       output.removeChild(output.childNodes[0]); 
     }
 
     this.scroll_to_bottom_auto();
   },
-  scroll_to_bottom_auto: function () { //畫面自动捲動
+  scroll_to_bottom_auto: function () { //画面自动卷动
     if (stop_scroll == false) {
-      window.scrollTo(0, document.body.scrollHeight); //畫面自动捲動
+      window.scrollTo(0, document.body.scrollHeight); //画面自动卷动
       if (obs_mode == false) {
         elemVisibility.hide(scroll_to_bottom_btn);
       }
@@ -411,7 +411,7 @@ const main = {
       //document.getElementById("scroll_to_bottom_btn").style.display = 'block';
     }
   },
-  scroll_to_bottom_btn: function () { //向下捲動的按鈕
+  scroll_to_bottom_btn: function () { //向下卷动的按钮
     let scroll_to_bottom_btn = document.getElementById("scroll_to_bottom_btn");
     scroll_to_bottom_btn.addEventListener("mouseup", function () {
       window.scrollTo(0, document.body.scrollHeight);
@@ -420,10 +420,10 @@ const main = {
       stop_scroll = false;
     });
   },
-  pt: function (num) { //數字小於10時前面補0 (顯示時間用,例 12:07)
+  pt: function (num) { //数字小于10时前面补0 (显示时间用,例 12:07)
     return (num < 10 ? "0" : "") + num;
   },
-  get_time: function () { //取得目前時間
+  get_time: function () { //取得目前时间
     let now_time = new Date();
 
     //let year = now_time.getFullYear();
@@ -437,7 +437,7 @@ const main = {
 
     return txt_datetime;
   },
-  get_time_full: function () { //取得目前時間
+  get_time_full: function () { //取得目前时间
     let now_time = new Date();
 
     let year = now_time.getFullYear();
@@ -451,7 +451,7 @@ const main = {
 
     return txt_datetime;
   },
-  numberWithCommas: function (x) { //數字千位加逗點 ( '1000' => '1,000' )
+  numberWithCommas: function (x) { //数字千位加逗点 ( '1000' => '1,000' )
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   },
   display_datetime: function() {
@@ -461,7 +461,7 @@ const main = {
       tool_bar_datetime_span.textContent = `● ${this.get_time()}`;
     },1000);
   },
-  check_scroll: function () { //檢查畫面捲動方向,如果向上則觸法暫停捲動功能
+  check_scroll: function () { //检查画面卷动方向,如果向上则触法暂停卷动功能
     //原版
     if (obs_mode != true) {
       var lastScrollTop = 0;
@@ -514,7 +514,7 @@ var ws_chat = {
     let chat_string = evt.data.trim();
 
     if (chat_string.indexOf("PING") != -1) {
-      this.doSend("PONG");
+      this.doSend("发布NG");
     }
 
     if (chat_string.indexOf("PRIVMSG") != -1) {
@@ -538,6 +538,28 @@ var ws_chat = {
 
       // 弹幕内容
       let msg = /PRIVMSG.*:(.*)/.exec(chat_string)[1];
+      
+      // 表情
+      let emotes = /emotes=(.*?);/.exec(chat_string)[1];
+
+      if (emotes != '')
+      {
+        let emotes_list = emotes.split("/");
+        let emotes_list_len = emotes_list.length;
+        let token = [];
+        for (var i = 0; i < emotes_list_len; i++) {
+          let emote = emotes_list[i].split(":")
+          let index = emote[1].split(",")
+          let pos = index[0].split("-")
+          token.push([msg.substring(parseInt(pos[0]),parseInt(pos[1])+1),emote[0]])
+        }
+        let token_len = token.length;
+        for (var j = 0; j < token_len; j++) {
+          let reg = eval(`/${token[j][0]}/g`);
+          msg = msg.replace(reg, `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${token[j][1]}/default/dark/2.0" width="30px" height="30px" />`)
+        }
+      }
+
       main.writeToScreen(`${role}<span class="name name_title" style="${color_css}" title="${pfid}">${w_name} :</span> <span class="msg">${msg}</span>`, ["kk_chat"]);
     }
   },
@@ -571,7 +593,7 @@ var ws_chat = {
 function webSocket_chat() {
   websocket = new WebSocket(wsUri_chat);
 
-  //websocket的事件監聽器
+  //websocket的事件监听器
   websocket.onopen = function (evt) { ws_chat.onOpen(evt) };
   websocket.onclose = function (evt) { ws_chat.onClose(evt) };
   websocket.onmessage = function (evt) { ws_chat.onMessage(evt) };
@@ -579,6 +601,6 @@ function webSocket_chat() {
 }
 
 (function () {
-  //程式進入點
+  //程序进入点
   window.addEventListener("load", main.init(), false);
 })();
